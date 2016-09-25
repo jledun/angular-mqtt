@@ -22,39 +22,66 @@
 
   angular.module('ngMqtt')
   .value('appName', 'ngMqtt')
+  .value('author', 'Julien Ledun <j.ledun@iosystems.fr')
+  .value('licence', 'MIT')
   .value('default_config', default_config)
-  .value('default_ip', 'localhost')
-  .value('default_port', 1883)
-  .value('default_qos', 1)
-  .value('default_retain', true)
   .provider('mqtt', mqttProvider)
-  .factory('mqttFactory', mqttFactory)
   .run( run );
 
   function mqttProvider() {
     let self = this;
+    self.conf = {};
 
-    self.$get = ['', function() {}];
-    self.test = function(msg) { console.log(msg); };
+    self.$get = ['default_config', function mqttFactory(default_config) {
 
-  };
+      self.conf = self.conf || default_config;
 
-  function mqttFactory($http, default_config) {
+      let client = {};
+      self.mqtt = {};
+      self.topics = {};
+      
+      client.connect = () => {
+        //if ( self.mqtt ) client.destroy();
+        self.mqtt = mqtt.connect(`ws:${self.conf.ip}:${self.conf.port}`);
 
-    let factory = {};
-    factory.config = default_config;
+        self.mqtt.on("message", (topic, message) => {
+          self.topics(topic, message);
+        });
+      };
 
-    factory.test = () => {
-      console.log(`default configuration : `);
-      console.log(factory.config);
-    }
+      client.destroy = () => {
+        if ( !self.mqtt ) return;
+        self.mqtt.end();
+      };
 
+      client.subscribe = (topic, cb) => {
+        self.topics = cb;
+        self.mqtt.subscribe( topic );
+      };
 
-    return factory;
+      client.unsubscribe = (topic, cb) => {
+        self.topics = {};
+        self.mqtt.unsubscribe( topic );
+      };
+
+      client.publish = (topic, message, qos, retain) => {
+        qos = qos || self.conf.qos;
+        retain = retain || self.conf.retain;
+        self.mqtt.publish( topic, message, {qos: qos, retain: retain} );
+      };
+
+      return client;
+
+    }];
+
+    self.client = function( config ) {
+      self.conf = config;
+    };
+
   };
 
   function run() {
-    console.log("je run de fou");
+    // function to be executed at launch
   };
 
-} )();
+})();
