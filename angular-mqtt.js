@@ -41,11 +41,12 @@
       self.topics = {};
       
       client.connect = () => {
-        //if ( self.mqtt ) client.destroy();
         self.mqtt = mqtt.connect(`ws:${self.conf.ip}:${self.conf.port}`);
 
         self.mqtt.on("message", (topic, message) => {
-          self.topics(topic, message);
+          angular.forEach( self.topics, ( cb, t ) => {
+            if ( topic.indexOf( t ) !== -1 ) return cb( topic, message );
+          });
         });
       };
 
@@ -69,6 +70,13 @@
         retain = retain || self.conf.retain;
         self.mqtt.publish( topic, message, {qos: qos, retain: retain} );
       };
+
+      client.on = ( topic, cb ) => {
+        self.topics[topic] = cb;
+        self.mqtt.subscribe( `${topic}/#` );
+      };
+
+      client.connect();
 
       return client;
 
