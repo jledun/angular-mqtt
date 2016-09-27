@@ -2,7 +2,7 @@
 
 ## Install
 
-    bower install angular-mqtt
+    bower install io-angular-mqtt
 
 Your project need to include angular libraries :
 
