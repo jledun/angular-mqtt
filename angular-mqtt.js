@@ -41,6 +41,7 @@
       self.topics = {};
       
       client.connect = () => {
+
         self.mqtt = mqtt.connect(`ws:${self.conf.ip}:${self.conf.port}`);
 
         self.mqtt.on("message", (topic, message) => {
@@ -55,23 +56,15 @@
         self.mqtt.end();
       };
 
-      client.subscribe = (topic, cb) => {
-        self.topics = cb;
-        self.mqtt.subscribe( topic );
-      };
-
-      client.unsubscribe = (topic, cb) => {
-        self.topics = {};
-        self.mqtt.unsubscribe( topic );
-      };
-
-      client.publish = (topic, message, qos, retain) => {
+      client.send = (topic, message, qos, retain) => {
         qos = qos || self.conf.qos;
         retain = retain || self.conf.retain;
         self.mqtt.publish( topic, message, {qos: qos, retain: retain} );
       };
+      client.publish = client.send;
 
       client.on = ( topic, cb ) => {
+        topic = topic.replace('/#', '');
         self.topics[topic] = cb;
         self.mqtt.subscribe( `${topic}/#` );
       };
